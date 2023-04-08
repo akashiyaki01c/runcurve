@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>駅所要時間計算</title>
+    <meta charset="UTF-8">
+		<meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="../src/css/style.css" />
+    <style>
+      textarea {
+        resize: none;
+        width: 45%;
+        height: 150px;
+      }
+      #header {
+        margin: 10px;
+      }
+      #myChart {
+        width: 100%;
+        height: 300px;
+      }
+      #result {
+          border: solid 1px var(--default-border-color);
+          margin: 10px;
+      }
+      #error {
+        color: #444;
+        text-align: center;
+      }
+      #times {
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+			<h1 id="page-title">所要時間計算してくれるかもしれないもの。</h1>
+			<p>
+				<a href="../index.html">トップページ</a>
+				&gt;
+				所要時間計算してくれるかもしれないもの。
+			</p>
+		</header>
+    <main>
+      <div id="header">
+        <form id="input">
+          <textarea id="input-route" placeholder="路線データ">
+{
+  "name": "テストデータ",
+  "curves": [
+    [500, 650, 400]
+  ],
+  "gradients": [
+    [200, 300, 20],
+    [1500, 1800, -20]
+  ],
+  "limitSpeeds": [
+    [500, 650, 70]
+  ],
+  "tunnels": [
+    [0, 1000, 2]
+  ],
+  "stations": [{
+    "name": "A駅",
+    "position": 0,
+    "stopType": 0,
+    "maxSpeed": 90
+  }, {
+    "name": "B駅",
+    "position": 2000,
+    "stopType": 0,
+    "maxSpeed": 115
+  }, {
+    "name": "C駅",
+    "position": 5000,
+    "stopType": 0,
+    "maxSpeed": 0
+  }]
+}
+          </textarea>
+          <textarea id="input-vehicle" placeholder="車両データ">
+{
+  "name": "テストデータ",
+  "tractiveForces": null,
+  "runningResistance": null,
+  "deceleration": 2.50,
+  "mCars": 4,
+  "tCars": 2,
+  "mWeight": 35,
+  "tWeight": 25,
+  "maxSpeed": 120,
+  "acceleration": 3.50,
+  "fixedTorqueSpeed": 40,
+  "constantPowerSpeed": 80,
+  "coefficient0": 1,
+  "coefficient1": 2 
+}
+          </textarea>
+          <button type="button" onclick="reload();">計算</button>
+        </form>
+      </div>
+      <div id="result">
+        <div class="error" id="error">計算ボタンを押してください。</div>
+        <canvas id="myChart"></canvas>
+        <table id="times"></table>
+      </div>
+      <div id="help">
+        <h3>路線データ(フォーム左側の要素)</h3>
+        <p>入力形式はJSONです。</p>
+        <p>以下に必要な要素を列挙します。</p>
+        <table>
+          <caption>路線データ(Routeクラス)の変数一覧</caption>
+          <tr>
+            <th>変数名</th>
+            <th>型</th>
+            <th>説明</th>
+          </tr>
+          <tr>
+            <td>name</td>
+            <td><code>String</code></td>
+            <td>路線名です。ファイル出力時に使用します。</td>
+          </tr>
+          <tr>
+            <td>curves</td>
+            <td><code>Array&lt;[number;3]&gt;</code></td>
+            <td>路線のカーブ情報の配列です。各要素は<code>[開始距離(m), 終了距離(m), 曲線半径(m)]</code>の順です。</td>
+          </tr>
+          <tr>
+            <td>gradients</td>
+            <td><code>Array&lt;[number;3]&gt;</code></td>
+            <td>路線の勾配情報の配列です。各要素は<code>[開始距離(m), 終了距離(m), 勾配値(‰)]</code>の順です。</td>
+          </tr>
+          <tr>
+            <td>limitSpeeds</td>
+            <td><code>Array&lt;[number;3]&gt;</code></td>
+            <td>路線の制限速度の配列です。各要素は<code>[開始距離(m), 終了距離(m), 制限速度(km/h)]</code>の順です。</td>
+          </tr>
+          <tr>
+            <td>tunnels</td>
+            <td><code>Array&lt;[number;3]&gt;</code></td>
+            <td>路線のトンネルの配列です。各要素は<code>[開始距離(m), 終了距離(m), トンネル種別]</code>の順です。トンネル種別は、開渠が0、複線用トンネルが1、単線用トンネルが2です。</td>
+          </tr>
+          <tr>
+            <td>stations</td>
+            <td><code>Array&lt;[Statios]&gt;</code></td>
+            <td>路線の駅の配列です。詳細は以下で説明します。</td>
+          </tr>
+        </table>
+
+        <table>
+          <caption>駅データ(Stationクラス)の変数一覧</caption>
+          <tr>
+            <th>変数名</th>
+            <th>型</th>
+            <th>説明</th>
+          </tr>
+          <tr>
+            <td>name</td>
+            <td><code>String</code></td>
+            <td>駅名です。ファイル出力時に使用します。</td>
+          </tr>
+          <tr>
+            <td>position</td>
+            <td><code>Number</code></td>
+            <td>駅の位置です。(m)</td>
+          </tr>
+          <tr>
+            <td>stopType</td>
+            <td><code>Number</code></td>
+            <td>停車種別です。現在は未実装です。</td>
+          </tr>
+          <tr>
+            <td>maxSpeed</td>
+            <td><code>Number</code></td>
+            <td>次駅までの最高速度です。(km/h)</td>
+          </tr>
+        </table>
+
+        <h3>車両データ(フォーム右側の要素)</h3>
+        <p>入力形式はJSONです。</p>
+        <p>以下に必要な要素を列挙します。</p>
+        <table>
+          <caption>車両データ(Vehicleクラス)の変数一覧</caption>
+          <tr>
+            <th>変数名</th>
+            <th>型</th>
+            <th>説明</th>
+          </tr>
+          <tr>
+            <td>name</td>
+            <td><code>String</code></td>
+            <td>車両名です。ファイル出力時に使用します。</td>
+          </tr>
+          <tr>
+            <td>acceleration</td>
+            <td><code>Number</code></td>
+            <td>車両の起動加速度です。単位はkm/h/sです。この値を用いて引張力を計算します。</td>
+          </tr>
+          <tr>
+            <td>deceleration</td>
+            <td><code>Number</code></td>
+            <td>車両の減速度です。単位はkm/h/sです。加速度と異なり一定の減速度で計算します。</td>
+          </tr>
+          <tr>
+            <td>fixedTorqueSpeed</td>
+            <td><code>Number</code></td>
+            <td>モーターの定出力領域が終了する速度です。単位はkm/hです。</td>
+          </tr>
+          <tr>
+            <td>constantPowerSpeed</td>
+            <td><code>Number</code></td>
+            <td>モーターの定トルク領域が終了する速度です。単位はkm/hです。</td>
+          </tr>
+          <tr>
+            <td>maxSpeed</td>
+            <td><code>Number</code></td>
+            <td>車両の最高速度です。単位はkm/hです。</td>
+          </tr>
+          <tr>
+            <td>mCars</td>
+            <td><code>Number</code></td>
+            <td>M車の両数です。編成重量の計算に用います。</td>
+          </tr>
+          <tr>
+            <td>tCars</td>
+            <td><code>Number</code></td>
+            <td>T車の両数です。編成重量の計算に用います。</td>
+          </tr>
+          <tr>
+            <td>mWeight</td>
+            <td><code>Number</code></td>
+            <td>M車の重量です。単位はtです。編成重量の計算に用います。</td>
+          </tr>
+          <tr>
+            <td>tWeight</td>
+            <td><code>Number</code></td>
+            <td>T車の重量です。単位はtです。編成重量の計算に用います。</td>
+          </tr>
+          <tr>
+            <td>coefficient0</td>
+            <td><code>Number</code></td>
+            <td>定トルク領域の定数です。既定値は1です。</td>
+          </tr>
+          <tr>
+            <td>coefficient1</td>
+            <td><code>Number</code></td>
+            <td>特性領域の定数です。既定値は2です。</td>
+          </tr>
+          <tr>
+            <td>tractiveForces</td>
+            <td><code>Array&lt;Number&gt;</code></td>
+            <td>1km/hごとの加速時の引張力特性です。単位は編成に対してのkgfです。nullを代入しておくと各パラメータから自動計算します。</td>
+          </tr>
+          <tr>
+            <td>runningResistance</td>
+            <td><code>Array&lt;Number&gt;</code></td>
+            <td>1km/hごとの走行抵抗です。単位は編成に対してのkgfです。nullを代入しておくと自動計算します。</td>
+          </tr>
+        </table>
+      </div>
+    </main>
+    <footer>
+			<p>© 2022- Akashiyaki</p>
+		</footer>
+
+    <script src="./lib/route.js"></script>
+    <script src="./lib/vehicle.js"></script>
+    <script src="./lib/calc.js"></script>
+    <script src="./parse.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.0/chart.min.js"></script>
+    <script>
+
+      let vehicle = new Vehicle(
+        "Test",
+        defaultTractiveForce(4.0, 40, 80, 200, 4, 2, 35, 25, 1, 2),
+        defaultRunningResistance(4, 2, 35, 25, 200),
+        2.75,
+        4, 2, 35, 25,
+        140
+      );
+
+      let route = new Route(
+        "Test",
+        [ // 曲線データ
+
+        ],
+        [ // 勾配データ
+          [200, 800, 20]
+        ],
+        [ // 制限速度データ
+          [800, 1000, 60]
+        ],
+        [ // トンネルデータ
+
+        ],
+        [ // 駅データ
+          new Station("A駅", 0, 0, 90),
+          new Station("B駅", 1500, 0, 0),
+        ]
+      );
+
+      let textarea = document.querySelector(`textarea`);
+      let myChart;
+
+      /* textarea.addEventListener('keyup', () => {
+        reload();
+      }); */
+    </script>
+  </body>
+</html>
