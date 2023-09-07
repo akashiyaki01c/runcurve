@@ -1,0 +1,56 @@
+{
+    "name": "テストデータ",
+    "curves": [
+        [
+            500,
+            650,
+            400
+        ]
+    ],
+    "gradients": [
+        [
+            200,
+            300,
+            20
+        ],
+        [
+            1500,
+            1800,
+            -20
+        ]
+    ],
+    "limitSpeeds": [
+        [
+            500,
+            650,
+            70
+        ]
+    ],
+    "tunnels": [
+        [
+            0,
+            1000,
+            2
+        ]
+    ],
+    "stations": [
+        {
+            "name": "A駅",
+            "position": 0,
+            "stopType": 0,
+            "maxSpeed": 90
+        },
+        {
+            "name": "B駅",
+            "position": 2000,
+            "stopType": 0,
+            "maxSpeed": 115
+        },
+        {
+            "name": "C駅",
+            "position": 5000,
+            "stopType": 0,
+            "maxSpeed": 0
+        }
+    ]
+}
