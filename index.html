@@ -265,6 +265,7 @@
     <script src="./lib/route.js"></script>
     <script src="./lib/vehicle.js"></script>
     <script src="./lib/calc.js"></script>
+    <script src="./lib/calcv2.js"></script>
     <script src="./parse.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.0/chart.min.js"></script>
     <script>
@@ -300,6 +301,8 @@
 
       let textarea = document.querySelector(`textarea`);
       let myChart;
+
+      console.log(RuncurveV2.getSpeedAllStation(route, vehicle));
 
       /* textarea.addEventListener('keyup', () => {
         reload();
