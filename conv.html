@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+</head>
+<body>
+	<style>
+		textarea {
+			width: 40%;
+			height: 20%;
+		}
+	</style>
+	<div>
+		<textarea name="input" id="input" rows="20"></textarea>
+		<textarea name="output" id="output" rows="20"></textarea>
+	</div>
+	<div>
+		<button onclick="parse()">実行</button>
+	</div>
+	<script>
+		function parse() {
+			let inputString = document.querySelector("#input").value;
+			let cells = inputString.split('\n').map(v => v.split('\t'));
+
+			let result = {
+				name: "テストデータ",
+				curves: [],
+				gradients: [],
+				limitSpeeds: [],
+				tunnels: [],
+				stations: [],
+			};
+
+			for (const row of cells) {
+				if (row.Length == 0) { continue; }
+				switch (row[0]) {
+					case "駅":
+						result.stations.push({
+							name: row[1],
+							position: Number.parseInt(row[4]),
+							stopType: row[6] != "" ? 0 : 1,
+							maxSpeed: Number.parseInt(row[5])
+						});
+						break;
+					case "勾配":
+						result.gradients.push([
+							Number.parseInt(row[7])+1,
+							Number.parseInt(row[8])-1,
+							Number.parseFloat(row[9])
+						]);
+						break;
+					case "制限速度":
+						result.limitSpeeds.push([
+							Number.parseInt(row[10])+1,
+							Number.parseInt(row[11])-1,
+							Number.parseInt(row[12])
+						]);
+						break;
+				}
+			}
+			let firstStaPosition = result.stations.length != 0 ? result.stations[0].position : 0;
+
+			for (const curve of result.curves) {
+				curve[0] -= firstStaPosition;
+				curve[1] -= firstStaPosition;
+			}
+			for (const gradient of result.gradients) {
+				gradient[0] -= firstStaPosition;
+				gradient[1] -= firstStaPosition;
+			}
+			for (const limit of result.limitSpeeds) {
+				limit[0] -= firstStaPosition;
+				limit[1] -= firstStaPosition;
+			}
+			for (const tunnel of result.tunnels) {
+				tunnel[0] -= firstStaPosition;
+				tunnel[1] -= firstStaPosition;
+			}
+			for (const sta of result.stations) {
+				sta.position -= firstStaPosition;
+			}
+
+			document.querySelector("#output").value = JSON.stringify(result);
+		}
+	</script>
+</body>
+</html>

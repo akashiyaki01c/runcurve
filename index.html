@@ -295,14 +295,13 @@
         ],
         [ // 駅データ
           new Station("A駅", 0, 0, 90),
-          new Station("B駅", 1500, 0, 0),
+          new Station("B駅", 1500, 0, 90),
+          new Station("C駅", 4000, 0, 90),
         ]
       );
 
       let textarea = document.querySelector(`textarea`);
-      let myChart;
-
-      console.log(RuncurveV2.getSpeedAllStation(route, vehicle));
+      let myChart = null;
 
       /* textarea.addEventListener('keyup', () => {
         reload();

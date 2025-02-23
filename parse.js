@@ -69,17 +69,14 @@ function reload()
         document.getElementById("error").innerHTML = '<span style="color: red;">入力JSONのパースに失敗しました。</span>';
     }
 
-    let resultSpeed = [];
-    let resultLimitSpeed = [];
-    let resultTimeArray = [];
+    const resultSpeed = RuncurveV2.getSpeedAllStation(_route, _vehicle);
     let resultTime = [];
     for (let i = 0; i < _route.stations.length-1; i++)
     {
-        let arr = runcurve.getSpeed(_route, _vehicle, i);
-        resultSpeed.push(...arr);
-        resultLimitSpeed.push(...runcurve.getLimitSpeed(route, _vehicle, i));
-        resultTimeArray.push(...runcurve.getTimeArray(arr));
-        resultTime.push(runcurve.getTime(arr));
+        let stationBetweenArr = resultSpeed.speed.slice(_route.stations[i].position, _route.stations[i+1].position);
+
+        let timeArr = stationBetweenArr.map(v => 1 / (v / 3.6));
+        resultTime.push(timeArr.reduce((p, c) => p+c));
     }
 
     { // times:tableの描画
@@ -93,9 +90,12 @@ function reload()
     }
     
     const type = "line";
+
+    console.log(resultSpeed);
+
     let data = {
-        labels: [...Array(resultSpeed.length)].map((_, i) => i),
-        datasets: [{
+        labels: [...Array(resultSpeed.speed.length)].map((_, i) => i),
+        datasets: [/* {
             label: "速度",
             fill: true,
             borderColor: "rgba(0,0,127,0.8)",
@@ -111,6 +111,18 @@ function reload()
             borderColor: "rgba(127,0,0,0.0)",
             pointRadius: 1,
             data: resultTimeArray
+        }, */ {
+            label: "速度",
+            fill: true,
+            borderColor: "rgba(0,0,127,0.8)",
+            pointRadius: 0,
+            data: resultSpeed.speed
+        }, {
+            label: "制限",
+            fill: true,
+            borderColor: "rgba(0,0,127,0.8)",
+            pointRadius: 0,
+            data: resultSpeed.limit
         }]
     }
     let options = {
